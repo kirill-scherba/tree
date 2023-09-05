@@ -62,6 +62,7 @@ func (p *PathArray[T]) Len() int {
 	return len(p.arr)
 }
 
+// PathSortOptions is path sort options used in Sort function
 type PathSortOptions struct {
 	SortByCost      bool // default true
 	SortByPeers     bool // default true
@@ -70,6 +71,9 @@ type PathSortOptions struct {
 
 // Sort sorts PathArray
 func (p *PathArray[T]) Sort(options ...PathSortOptions) *PathArray[T] {
+
+	p.m.Lock()
+	defer p.m.Unlock()
 
 	option := PathSortOptions{true, true, true}
 	if len(options) > 0 {
