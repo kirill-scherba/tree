@@ -216,7 +216,7 @@ func (e *Element[T]) string(path *[]*Element[T], level int, sline string) (str s
 
 	const (
 		doesNotShowNotallowed = false
-		showLevel             = true
+		showLevel             = false
 	)
 
 	var i int
