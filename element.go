@@ -24,8 +24,8 @@ type WayOptions struct {
 	// Cost (weight) of this way (way to this element)
 	Cost float64
 
-	// If true than The road avalable only oneway from this element to selected
-	// element (to child), and not avalable back from selected element (from
+	// If true than The road available only oneway from this element to selected
+	// element (to child), and not available back from selected element (from
 	// child) to this element
 	Oneway bool
 }
