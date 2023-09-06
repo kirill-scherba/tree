@@ -21,8 +21,8 @@ func (t TreeData) String() string {
 
 func main() {
 
-	// Create new multi-chields t
-	t := tree.New[TreeData]("My first element")
+	// Create new tree
+	t := tree.New[TreeData]()
 
 	// Create new tree elements (first element and end point element)
 	e := t.New("My first element")

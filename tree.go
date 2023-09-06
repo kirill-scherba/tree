@@ -25,7 +25,7 @@ type TreeData interface {
 }
 
 // New creates new multi-chields tree
-func New[T TreeData](value T) *Tree[T] { return &Tree[T]{} }
+func New[T TreeData]() *Tree[T] { return &Tree[T]{} }
 
 // New creates newtree element
 func (t *Tree[T]) New(value T) *Element[T] {
