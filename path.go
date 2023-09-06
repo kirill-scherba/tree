@@ -1,3 +1,9 @@
+// Copyright 2023 Kirill Scherba <kirill@scherba.ru>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Path module of Tree package.
+
 package tree
 
 import (

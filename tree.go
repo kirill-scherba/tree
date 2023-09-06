@@ -1,5 +1,9 @@
-// tree is /thread protected/ any direction multi-child tree implementation
-// with way cost child
+// Copyright 2023 Kirill Scherba <kirill@scherba.ru>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Tree is thread protected any direction multi-child tree implementation
+// with way cost child.
 package tree
 
 import (
