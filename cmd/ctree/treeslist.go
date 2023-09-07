@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Tree CLI application. Trees list module.
+// Tree CLI application. List of Trees module.
 
 package main
 
@@ -12,10 +12,10 @@ import (
 	"github.com/kirill-scherba/tree"
 )
 
-// TreesList is a list of loaded trees
+// TreesList is a list of trees
 type TreesList []*tree.Tree[TreeData]
 
-// String returns a string representation of the tree list
+// String returns a string representation of the list of trees
 func (t TreesList) String() string {
 	var s string
 	for i := range t {
@@ -24,7 +24,7 @@ func (t TreesList) String() string {
 	return s
 }
 
-// add adds tree to the tree liat
+// add adds tree to the list of trees
 func (t *TreesList) add(tree *tree.Tree[TreeData]) {
 	*t = append(*t, tree)
 }

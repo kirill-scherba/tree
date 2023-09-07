@@ -49,6 +49,12 @@ func (t *Tree[T]) New(value T) *Element[T] {
 	}
 }
 
-func (t *Tree[T]) Name() string   { return t.name }
+// Name returns Name of tree
+func (t *Tree[T]) Name() string { return t.name }
+
+// String returns name of string (if name was ommited when tree was created
+// then name equal id)
 func (t *Tree[T]) String() string { return t.Name() }
-func (t *Tree[T]) Id() string     { return t.id }
+
+// Id return trees id
+func (t *Tree[T]) Id() string { return t.id }
