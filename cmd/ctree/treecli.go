@@ -1,3 +1,9 @@
+// Copyright 2023 Kirill Scherba <kirill@scherba.ru>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Tree CLI application. Tree client module.
+
 package main
 
 import (
@@ -14,12 +20,11 @@ import (
 
 type Treecli struct {
 	commands []menu.Item
-	batch    *Batch
+	// batch    *Batch
 	// alias    *Alias
-	menu *menu.Menu
-	// api      *API
-	// teo      *teonet.Teonet
-	tree *tree.Tree[TreeData]
+	menu     *menu.Menu
+	treeList TreesList
+	tree     *tree.Tree[TreeData]
 }
 
 // TreeData is tree elements data structure
@@ -58,18 +63,16 @@ func NewTreeCli(appShort string) (cli *Treecli, err error) {
 		return
 	}
 	cli.menu.Add(cli.commands...)
-	cli.batch = &Batch{cli.menu}
+	// cli.batch = &Batch{cli.menu}
 	// cli.alias = newAlias()
 	// cli.api = newAPI()
 
-	// Create default tree
+	// Create default tree and add it to default tree
 	cli.tree = tree.New[TreeData]()
+	cli.treeList.add(cli.tree)
 
 	return
 }
-
-// TreecliCommand common Treecli command structure
-type TreecliCommand struct{ *Treecli }
 
 // Command get command by name or nil if not found
 func (cli Treecli) Command(name string) interface{} {

@@ -9,6 +9,8 @@ package tree
 import (
 	"errors"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -17,7 +19,10 @@ var (
 )
 
 // Tree is the tree methods receiver
-type Tree[T TreeData] struct{}
+type Tree[T TreeData] struct {
+	name string
+	id   string
+}
 
 // TreeData interface represents TreeData required methods
 type TreeData interface {
@@ -25,7 +30,15 @@ type TreeData interface {
 }
 
 // New creates new multi-chields tree
-func New[T TreeData]() *Tree[T] { return &Tree[T]{} }
+func New[T TreeData](opts ...string) *Tree[T] {
+	name, id := "", uuid.New().String()
+	if len(opts) > 0 {
+		name = opts[0]
+	} else {
+		name = id
+	}
+	return &Tree[T]{name: name, id: id}
+}
 
 // New creates newtree element
 func (t *Tree[T]) New(value T) *Element[T] {
@@ -35,3 +48,7 @@ func (t *Tree[T]) New(value T) *Element[T] {
 		RWMutex: new(sync.RWMutex),
 	}
 }
+
+func (t *Tree[T]) Name() string   { return t.name }
+func (t *Tree[T]) String() string { return t.Name() }
+func (t *Tree[T]) Id() string     { return t.id }

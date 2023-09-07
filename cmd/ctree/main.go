@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Tree CLI applicatiom - command line interface application allow create and
+// Tree CLI application - command line interface application allow create and
 // process any tree data. For example it may be decision tree.
 package main
 
@@ -26,7 +26,7 @@ func main() {
 	}
 
 	// TODO: Run batch files
-	cli.batch.run(aliasBatchFile)
+	// cli.batch.run(aliasBatchFile)
 	// cli.batch.run(connectBatchFile)
 
 	// Run Teonet CLI commands menu

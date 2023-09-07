@@ -1,8 +1,16 @@
+// Copyright 2023 Kirill Scherba <kirill@scherba.ru>. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Tree CLI application. Command Tree module.
+
 package main
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/kirill-scherba/tree"
 	"github.com/teonet-go/teonet/cmd/teonet/menu"
 )
 
@@ -23,46 +31,61 @@ func (c CmdTree) Exec(line string) (err error) {
 	var list, save, new, choose bool
 	flags := c.NewFlagSet(c.Name(), c.Usage(), c.Help())
 	flags.BoolVar(&new, "new", list, "create new tree")
+	flags.BoolVar(&save, "save", save, "save current tree")
 	flags.BoolVar(&list, "list", list, "show list of trees")
-	flags.BoolVar(&choose, "choose", list, "choose tree to use")
-	flags.BoolVar(&save, "save", list, "save list of trees")
+	flags.BoolVar(&choose, "choose", list, "choose tree to use by id")
 	err = flags.Parse(c.menu.SplitSpace(line))
 	if err != nil {
 		return
 	}
 	args := flags.Args()
+	argc := len(args)
 
 	switch {
 	// Check help
-	case len(args) > 0 && args[0] == cmdHelp:
+	case argc > 0 && args[0] == cmdHelp:
 		flags.Usage()
 		return
 
 	// Check length of arguments
-	case len(args) == 0:
-		flags.Usage()
-		err = ErrWrongNumArguments
-		return
+	// case argc == 0 && new:
+	// 	flags.Usage()
+	// 	err = ErrWrongNumArguments
+	// 	return
 
 	// Check -new flag
 	case new:
-		fmt.Printf("new tree `%s` created\n", args[0])
+		if argc > 0 {
+			name := strings.Join(args, " ")
+			c.tree = tree.New[TreeData](name)
+		} else {
+			c.tree = tree.New[TreeData]()
+		}
+		c.treeList.add(c.tree)
+		fmt.Printf("new tree `%s` created, id: %s\n", c.tree, c.tree.Id())
 		return
 
-		// Check -list flag
-		// case list:
-		// 	aliases := c.alias.list()
-		// 	for i := range aliases {
-		// 		fmt.Printf("%s\n", aliases[i])
-		// 	}
-		// 	return
+	// Check -list flag
+	case list:
+		fmt.Printf("%s", c.treeList.String())
+		return
 
-		// Check -save flag
-		// case save:
-		// 	aliases := c.alias.list()
-		// 	c.batch.Save(aliasBatchFile, CmdTree, aliases)
-		// 	return
+	// Check -list flag
+	// case list:
+	// 	aliases := c.alias.list()
+	// 	for i := range aliases {
+	// 		fmt.Printf("%s\n", aliases[i])
+	// 	}
+	// 	return
 
+	// Check -save flag
+	// case save:
+	// 	aliases := c.alias.list()
+	// 	c.batch.Save(aliasBatchFile, CmdTree, aliases)
+	// 	return
+
+	default:
+		fmt.Printf("current tree `%s`, id: %s\n", c.tree, c.tree.Id())
 	}
 
 	// Add alias
