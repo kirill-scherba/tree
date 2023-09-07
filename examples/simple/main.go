@@ -11,7 +11,7 @@ import (
 	"github.com/kirill-scherba/tree"
 )
 
-// TreeData is multi-chields tree data structure
+// TreeData is tree elements data structure
 type TreeData string
 
 // String is mandatory TreeData method which return element name
