@@ -206,10 +206,11 @@ func (e *Element[T]) String() (str string) {
 
 	var path []*Element[T]
 	str = fmt.Sprintf(". %s", e.Value())
-	str += e.string(&path, 0, "")
+	str += e.string(nil, &path, 0, "")
 	return
 }
-func (e *Element[T]) string(path *[]*Element[T], level int, sline string) (str string) {
+func (e *Element[T]) string(parent *Element[T], path *[]*Element[T], level int,
+	sline string) (str string) {
 
 	// Check that element is already in path
 	for i := range *path {
@@ -230,6 +231,11 @@ func (e *Element[T]) string(path *[]*Element[T], level int, sline string) (str s
 	for c, options := range e.ways {
 
 		i++
+
+		// Skip parent
+		if c == parent {
+			continue
+		}
 
 		// Create wayAllowed text
 		var wayAllowed string
@@ -261,7 +267,7 @@ func (e *Element[T]) string(path *[]*Element[T], level int, sline string) (str s
 			cost, wayAllowed)
 
 		// Process children
-		str += c.string(path, level+1, nextSline)
+		str += c.string(e, path, level+1, nextSline)
 	}
 	return
 }

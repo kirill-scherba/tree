@@ -20,10 +20,11 @@ import (
 
 // Tree represents Tree CLI data structure and methods receiver.
 type Tree struct {
-	tree     *tree.Tree[TreeData]
-	menu     *menu.Menu
-	treeList TreesList
-	commands []menu.Item
+	treeList TreesList               // Trees array
+	tree     *tree.Tree[TreeData]    // Current tree
+	element  *tree.Element[TreeData] // Current element
+	menu     *menu.Menu              // Commands menu
+	commands []menu.Item             // Commands menu items
 	// batch    *Batch
 	// alias    *Alias
 }

@@ -36,11 +36,12 @@ func (c CmdElement) Compliter() (cmpl []menu.Compliter) {
 func (c CmdElement) Exec(line string) (err error) {
 
 	// Define and parse flags and get arguments
-	var new /* , save, list, selct */ bool
+	var new, add, print /* , save, selct */ bool
 	flags := c.NewFlagSet(c.Name(), c.Usage(), c.Help())
 	flags.BoolVar(&new, "new", new, "create new tree element")
+	flags.BoolVar(&add, "add", add, "add new element to current trees element")
+	flags.BoolVar(&print, "print", print, "prints the tree started from current element")
 	// flags.BoolVar(&save, "save", save, "save current tree")
-	// flags.BoolVar(&list, "list", list, "print list of trees")
 	// flags.BoolVar(&selct, "select", list, "select tree from list of trees by id")
 	err = flags.Parse(c.menu.SplitSpace(line))
 	if err != nil {
@@ -66,7 +67,26 @@ func (c CmdElement) Exec(line string) (err error) {
 
 		name := strings.Join(args, " ")
 		e := c.tree.New(TreeData(name))
+		c.element = e
 		fmt.Printf("element '%s' created\n", e.Value())
+
+	// Adds new element to current trees element: -add flag
+	case add:
+		if argc == 0 {
+			flags.Usage()
+			err = ErrWrongNumArguments
+			return
+		}
+		name := strings.Join(args, " ")
+		e := c.tree.New(TreeData(name))
+		c.element.Add(e)
+		fmt.Printf("element '%s' created and added to %s\n",
+			e.Value(), c.element.Value())
+
+	// Prints the tree started from current element: -print flag
+	case print:
+		fmt.Printf("list elements in tree name: '%s', id: %s\n%s\n",
+			c.tree, c.tree.Id(), c.element)
 
 	// Wrong flag selected or flags is empty
 	default:

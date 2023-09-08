@@ -92,7 +92,7 @@ func (c CmdTree) Exec(line string) (err error) {
 
 	// Print current tre name and id
 	default:
-		fmt.Printf("current tree bame: '%s', id: %s\n", c.tree, c.tree.Id())
+		fmt.Printf("current tree name: '%s', id: %s\n", c.tree, c.tree.Id())
 	}
 
 	// Add alias
