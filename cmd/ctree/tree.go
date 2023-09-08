@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Tree CLI application. Tree client module.
+// Tree CLI application. Tree client.
 
 package main
 
@@ -18,13 +18,14 @@ import (
 	"github.com/teonet-go/teonet/cmd/teonet/menu"
 )
 
-type Treecli struct {
+// Tree represents Tree CLI data structure and methods receiver.
+type Tree struct {
+	tree     *tree.Tree[TreeData]
+	menu     *menu.Menu
+	treeList TreesList
 	commands []menu.Item
 	// batch    *Batch
 	// alias    *Alias
-	menu     *menu.Menu
-	treeList TreesList
-	tree     *tree.Tree[TreeData]
 }
 
 // TreeData is tree elements data structure
@@ -35,9 +36,9 @@ func (t TreeData) String() string {
 	return string(t)
 }
 
-// NewTreeCli create new tree cli client
-func NewTreeCli(appShort string) (cli *Treecli, err error) {
-	cli = &Treecli{}
+// NewTreeCli create new Tree CLI client
+func NewTreeCli(appShort string) (cli *Tree, err error) {
+	cli = &Tree{}
 
 	// Create config directory if does not exists
 	dir, err := os.UserConfigDir()
@@ -75,7 +76,7 @@ func NewTreeCli(appShort string) (cli *Treecli, err error) {
 }
 
 // Command get command by name or nil if not found
-func (cli Treecli) Command(name string) interface{} {
+func (cli Tree) Command(name string) interface{} {
 	for i := range cli.commands {
 		if cli.commands[i].Name() == name {
 			return cli.commands[i]
@@ -85,12 +86,12 @@ func (cli Treecli) Command(name string) interface{} {
 }
 
 // Run command line interface menu
-func (cli Treecli) Run() {
+func (cli Tree) Run() {
 	cli.menu.Run()
 }
 
 // setUsage set flags usage helper function
-func (cli Treecli) setUsage(usage string, flags *flag.FlagSet, help ...string) {
+func (cli Tree) setUsage(usage string, flags *flag.FlagSet, help ...string) {
 	savUsage := flags.Usage
 	flags.Usage = func() {
 		fmt.Print("usage: " + usage + "\n\n")
@@ -103,7 +104,7 @@ func (cli Treecli) setUsage(usage string, flags *flag.FlagSet, help ...string) {
 }
 
 // NewFlagSet
-func (cli Treecli) NewFlagSet(name, usage string, help ...string) (flags *flag.FlagSet) {
+func (cli Tree) NewFlagSet(name, usage string, help ...string) (flags *flag.FlagSet) {
 	flags = flag.NewFlagSet(name, flag.ContinueOnError)
 	cli.setUsage(name+" "+usage, flags, help...)
 	return

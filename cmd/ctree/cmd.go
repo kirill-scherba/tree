@@ -19,16 +19,19 @@ const (
 	// cmdAPI       = "api"
 	cmdHelp = "help"
 
-	cmdTree = "tree"
+	cmdTree    = "tree"
+	cmdElement = "element"
 )
 
 var ErrWrongNumArguments = errors.New("wrong number of arguments")
+var ErrWrongIdArgument = errors.New("wrong id in arguments")
+var ErrNoFlags = errors.New("no flags, one of flag should be specified")
 
-// TreecliCommand common Treecli command structure
-type TreecliCommand struct{ *Treecli }
+// TreeCommand common Tree CLI command structure
+type TreeCommand struct{ *Tree }
 
 // addCommands add commands
-func (cli *Treecli) addCommands() {
+func (cli *Tree) addCommands() {
 	cli.commands = append(cli.commands,
 		// cli.newCmdAlias(),
 		// cli.newCmdConnectTo(),
@@ -37,5 +40,6 @@ func (cli *Treecli) addCommands() {
 		// cli.newCmdAPI(),
 
 		cli.newCmdTree(),
+		cli.newCmdElement(),
 	)
 }
