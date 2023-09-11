@@ -23,9 +23,12 @@ const (
 	cmdElement = "element"
 )
 
-var ErrWrongNumArguments = errors.New("wrong number of arguments")
-var ErrWrongIdArgument = errors.New("wrong id in arguments")
-var ErrNoFlags = errors.New("no flags, one of flag should be specified")
+var (
+	ErrWrongNumArguments = errors.New("wrong number of arguments")
+	ErrWrongIdArgument   = errors.New("wrong id in arguments")
+	ErrNoFlags           = errors.New("no flags, one of flag should be specified")
+	ErrElementNotFound   = errors.New("element not found")
+)
 
 // TreeCommand common Tree CLI command structure
 type TreeCommand struct{ *Tree }

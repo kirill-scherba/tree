@@ -9,6 +9,8 @@ package tree
 import (
 	"fmt"
 	"sync"
+
+	"golang.org/x/exp/slices"
 )
 
 // Element is the multi-chields tree element
@@ -86,6 +88,26 @@ func (e *Element[T]) Del(c *Element[T]) (*Element[T], error) {
 	return e, nil
 }
 
+// Get finds end returns tree elements by name, or nil if not found
+func (e *Element[T]) Get(n string) *Element[T] {
+	e.RLock()
+	defer e.RUnlock()
+
+	// Check current element
+	if e.Value().String() == n {
+		return e
+	}
+
+	// Check connected elements
+	for c := range e.ways {
+		if c.Value().String() == n {
+			return c
+		}
+	}
+
+	return nil
+}
+
 // Remove delete element from tree
 func (e *Element[T]) Remove() (*Element[T], error) {
 	e.Lock()
@@ -110,15 +132,6 @@ func (e *Element[T]) Cost(c *Element[T]) (cost float64, ok bool) {
 	return e.cost(c)
 }
 
-// cost returns elements way to child cost (Unsafe)
-func (e *Element[T]) cost(c *Element[T]) (cost float64, ok bool) {
-	opt, ok := e.ways[c]
-	if ok {
-		cost = opt.Cost
-	}
-	return
-}
-
 // WayAllowed return true if the path from e to c element is available
 func (e *Element[T]) WayAllowed(c *Element[T]) bool {
 	e.RLock()
@@ -126,20 +139,34 @@ func (e *Element[T]) WayAllowed(c *Element[T]) bool {
 	return e.wayAllowed(c)
 }
 
-// wayAllowed return true if the path from e to c element is available (Unsafe)
-func (e *Element[T]) wayAllowed(c *Element[T]) bool {
-	opt, ok := e.ways[c]
-	if ok && opt.wayAllowed {
-		return true
-	}
-	return false
-}
-
 // Ways returns elments ways maps
 func (e *Element[T]) Ways() waysMap[T] {
 	e.RLock()
 	defer e.RUnlock()
 	return e.ways
+}
+
+// List returns list of elements in tree
+func (e *Element[T]) List() (list []*Element[T]) {
+	e.Lock()
+	defer e.Unlock()
+	list = append(list, e)
+	e.list(&list)
+	return
+}
+
+// list returns list of elements in tree (unsafe)
+func (e *Element[T]) list(l *[]*Element[T]) {
+	// list = append(list, e)
+	for c := range e.ways {
+		idx := slices.IndexFunc(*l, func(l *Element[T]) bool { return l == c })
+		if idx == -1 {
+			*l = append(*l, c)
+			c.list(l)
+		}
+	}
+
+	return
 }
 
 // PathTo finds pathes from current element to dst element in the tree
@@ -151,6 +178,37 @@ func (e *Element[T]) PathTo(dst *Element[T]) (p *PathArray[T]) {
 	e.pathTo(Path[T]{}, p, e, dst)
 	return
 }
+
+// String returns string with print of tree started from e element
+func (e *Element[T]) String() (str string) {
+	e.RLock()
+	defer e.RUnlock()
+
+	var path []*Element[T]
+	str = fmt.Sprintf(". %s", e.Value())
+	str += e.string(nil, &path, 0, "")
+	return
+}
+
+// cost returns elements way to child cost (Unsafe)
+func (e *Element[T]) cost(c *Element[T]) (cost float64, ok bool) {
+	opt, ok := e.ways[c]
+	if ok {
+		cost = opt.Cost
+	}
+	return
+}
+
+// wayAllowed return true if the path from e to c element is available (Unsafe)
+func (e *Element[T]) wayAllowed(c *Element[T]) bool {
+	opt, ok := e.ways[c]
+	if ok && opt.wayAllowed {
+		return true
+	}
+	return false
+}
+
+// PathTo finds pathes from current element to dst element in the tree (Unsafe)
 func (e *Element[T]) pathTo(path Path[T], parr *PathArray[T], next, dst *Element[T]) {
 
 	// Check that next element already exists in path and return error if so
@@ -199,16 +257,7 @@ func (e *Element[T]) pathTo(path Path[T], parr *PathArray[T], next, dst *Element
 	wg.Wait()
 }
 
-// String prints the tree started from e element
-func (e *Element[T]) String() (str string) {
-	e.RLock()
-	defer e.RUnlock()
-
-	var path []*Element[T]
-	str = fmt.Sprintf(". %s", e.Value())
-	str += e.string(nil, &path, 0, "")
-	return
-}
+// String returns string with print of tree started from e element (Unsafe)
 func (e *Element[T]) string(parent *Element[T], path *[]*Element[T], level int,
 	sline string) (str string) {
 

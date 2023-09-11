@@ -30,17 +30,19 @@ func (c CmdElement) Help() string {
 }
 func (c CmdElement) Compliter() (cmpl []menu.Compliter) {
 	return c.menu.MakeCompliterFromString([]string{
-		"-list", "-save", "-new", "-select", "-" + cmdHelp,
+		"-new", "-add", "-list", "-print", "-select", "-" + cmdHelp,
 	})
 }
 func (c CmdElement) Exec(line string) (err error) {
 
 	// Define and parse flags and get arguments
-	var new, add, print /* , save, selct */ bool
+	var new, add, list, print, selct /* , save */ bool
 	flags := c.NewFlagSet(c.Name(), c.Usage(), c.Help())
 	flags.BoolVar(&new, "new", new, "create new tree element")
 	flags.BoolVar(&add, "add", add, "add new element to current trees element")
+	flags.BoolVar(&list, "list", print, "prints list of element in this tree")
 	flags.BoolVar(&print, "print", print, "prints the tree started from current element")
+	flags.BoolVar(&selct, "select", selct, "select element in current tree by name")
 	// flags.BoolVar(&save, "save", save, "save current tree")
 	// flags.BoolVar(&selct, "select", list, "select tree from list of trees by id")
 	err = flags.Parse(c.menu.SplitSpace(line))
@@ -87,6 +89,22 @@ func (c CmdElement) Exec(line string) (err error) {
 	case print:
 		fmt.Printf("list elements in tree name: '%s', id: %s\n%s\n",
 			c.tree, c.tree.Id(), c.element)
+
+	// Select element in current tree by name: -selct flag
+	case selct:
+		if argc == 0 {
+			flags.Usage()
+			err = ErrWrongNumArguments
+			return
+		}
+		name := strings.Join(args, " ")
+		e := c.element.Get(name)
+		if e == nil {
+			err = ErrElementNotFound
+			return
+		}
+		c.element = e
+		fmt.Printf("element '%s' selected\n", e.Value())
 
 	// Wrong flag selected or flags is empty
 	default:
