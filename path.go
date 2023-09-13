@@ -31,6 +31,9 @@ func (p *PathArray[T]) String() (str string) {
 
 	for i, path := range p.arr {
 
+		if i > 0 {
+			str += "\n"
+		}
 		str += fmt.Sprintf(
 			"%d. From '%s' to '%s', nodes: %d , Cost: %.2f\n",
 			i+1,
@@ -40,13 +43,13 @@ func (p *PathArray[T]) String() (str string) {
 			path.Cost)
 
 		for j, e := range p.arr[i].Path {
-			var cost float64
-			if j > 0 {
-				cost, _ = p.arr[i].Path[j-1].Cost(e)
-				str += fmt.Sprintf("  node: %s, cost: %.2f\n", e.Value(), cost)
-			} else {
-				str += fmt.Sprintf("  node: %s\n", e.Value())
+			if j == 0 {
+				str += fmt.Sprintf("  node: %s", e.Value())
+				continue
 			}
+			str += "\n"
+			cost, _ := p.arr[i].Path[j-1].Cost(e)
+			str += fmt.Sprintf("  node: %s, cost: %.2f", e.Value(), cost)
 		}
 	}
 	return

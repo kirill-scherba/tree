@@ -8,6 +8,8 @@ package tree
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 
 	"golang.org/x/exp/slices"
@@ -92,6 +94,18 @@ func (e *Element[T]) Del(c *Element[T]) (*Element[T], error) {
 func (e *Element[T]) Get(n string) *Element[T] {
 	e.RLock()
 	defer e.RUnlock()
+	var l List[T]
+	return e.get(&l, n)
+}
+
+// Get finds end returns tree elements by name, or nil if not found (Unsafe)
+func (e *Element[T]) get(l *List[T], n string) *Element[T] {
+
+	// Check if element was already checked
+	if slices.Contains(*l, e) {
+		return nil
+	}
+	*l = append(*l, e)
 
 	// Check current element
 	if e.Value().String() == n {
@@ -102,6 +116,9 @@ func (e *Element[T]) Get(n string) *Element[T] {
 	for c := range e.ways {
 		if c.Value().String() == n {
 			return c
+		}
+		if e := c.get(l, n); e != nil {
+			return e
 		}
 	}
 
@@ -146,8 +163,11 @@ func (e *Element[T]) Ways() waysMap[T] {
 	return e.ways
 }
 
+// List is a list of elements array type
+type List[T TreeData] []*Element[T]
+
 // List returns list of elements in tree
-func (e *Element[T]) List() (list []*Element[T]) {
+func (e *Element[T]) List() (list List[T]) {
 	e.Lock()
 	defer e.Unlock()
 	list = append(list, e)
@@ -155,18 +175,24 @@ func (e *Element[T]) List() (list []*Element[T]) {
 	return
 }
 
-// list returns list of elements in tree (unsafe)
-func (e *Element[T]) list(l *[]*Element[T]) {
-	// list = append(list, e)
-	for c := range e.ways {
-		idx := slices.IndexFunc(*l, func(l *Element[T]) bool { return l == c })
-		if idx == -1 {
-			*l = append(*l, c)
-			c.list(l)
+// String returns list of elements name
+func (l List[T]) String() (str string) {
+	for i := range l {
+		if i > 0 {
+			str += "\n"
 		}
+		str += l[i].Value().String()
 	}
-
 	return
+}
+
+// Sort sorts elements in list by [T].Value().String()
+func (l List[T]) Sort() List[T] {
+	sort.Slice(l, func(i, j int) bool {
+		return strings.ToLower(l[i].Value().String()) <
+			strings.ToLower(l[j].Value().String())
+	})
+	return l
 }
 
 // PathTo finds pathes from current element to dst element in the tree
@@ -187,6 +213,17 @@ func (e *Element[T]) String() (str string) {
 	var path []*Element[T]
 	str = fmt.Sprintf(". %s", e.Value())
 	str += e.string(nil, &path, 0, "")
+	return
+}
+
+// list returns list of elements in tree (unsafe)
+func (e *Element[T]) list(l *List[T]) {
+	for c := range e.ways {
+		if !slices.Contains(*l, c) {
+			*l = append(*l, c)
+			c.list(l)
+		}
+	}
 	return
 }
 
@@ -212,12 +249,9 @@ func (e *Element[T]) wayAllowed(c *Element[T]) bool {
 func (e *Element[T]) pathTo(path Path[T], parr *PathArray[T], next, dst *Element[T]) {
 
 	// Check that next element already exists in path and return error if so
-	for i := range path.Path {
-		if path.Path[i] == next {
-			// Error: path not found because next element already exists
-			// fmt.Printf("reject\n")
-			return
-		}
+	if slices.Contains(path.Path, next) {
+		// Error: path not found because next element already exists
+		return
 	}
 
 	// Make sure the path to the next element is available
@@ -242,11 +276,7 @@ func (e *Element[T]) pathTo(path Path[T], parr *PathArray[T], next, dst *Element
 	// Create(copy) new pathes to find dst element in childs of next
 	var wg sync.WaitGroup
 	for child := range next.ways {
-
-		var dstPath Path[T]
-		dstPath.Cost = path.Cost
-		dstPath.Path = make([]*Element[T], len(path.Path))
-		copy(dstPath.Path, path.Path)
+		dstPath := Path[T]{path.Cost, slices.Clone(path.Path)}
 
 		wg.Add(1)
 		go func(child *Element[T]) {
@@ -262,11 +292,9 @@ func (e *Element[T]) string(parent *Element[T], path *[]*Element[T], level int,
 	sline string) (str string) {
 
 	// Check that element is already in path
-	for i := range *path {
-		if (*path)[i] == e {
-			str += " 🡡" // " ⮉"
-			return
-		}
+	if slices.Contains(*path, e) {
+		str += " 🡡" // " ⮉"
+		return
 	}
 	*path = append(*path, e)
 

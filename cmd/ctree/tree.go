@@ -25,7 +25,7 @@ type Tree struct {
 	element  *tree.Element[TreeData] // Current element
 	menu     *menu.Menu              // Commands menu
 	commands []menu.Item             // Commands menu items
-	// batch    *Batch
+	batch    *Batch
 	// alias    *Alias
 }
 
@@ -65,7 +65,7 @@ func NewTreeCli(appShort string) (cli *Tree, err error) {
 		return
 	}
 	cli.menu.Add(cli.commands...)
-	// cli.batch = &Batch{cli.menu}
+	cli.batch = &Batch{cli.menu}
 	// cli.alias = newAlias()
 	// cli.api = newAPI()
 

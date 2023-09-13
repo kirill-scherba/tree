@@ -26,7 +26,7 @@ func main() {
 	}
 
 	// TODO: Run batch files
-	// cli.batch.run(aliasBatchFile)
+	cli.batch.run(defTreeBatchFile)
 	// cli.batch.run(connectBatchFile)
 
 	// Run Teonet CLI commands menu

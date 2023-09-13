@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	aliasBatchFile   = "alias.conf"
+	defTreeBatchFile = "def_tree.conf"
 	connectBatchFile = "connectto.conf"
 )
 
@@ -48,6 +48,9 @@ func (b *Batch) run(name string) (err error) {
 		line = space.ReplaceAllString(line, " ")
 
 		fmt.Println(line) // Println will add back the final '\n'
+		if len(line) == 0 {
+			continue
+		}
 		if err = b.menu.ExecuteCommand(line); err != nil {
 			fmt.Println("error:", err)
 		}

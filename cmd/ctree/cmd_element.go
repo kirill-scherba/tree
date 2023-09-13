@@ -8,8 +8,10 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
+	"github.com/kirill-scherba/tree"
 	"github.com/teonet-go/teonet/cmd/teonet/menu"
 )
 
@@ -22,7 +24,7 @@ func (cli *Tree) newCmdElement() menu.Item {
 }
 
 func (c CmdElement) Name() string  { return cmdElement }
-func (c CmdElement) Usage() string { return "<flag> [name||id]" }
+func (c CmdElement) Usage() string { return "[flag] [name][, cost]" }
 func (c CmdElement) Help() string {
 	return "" +
 		"any operation with current tree elements depending of flag " +
@@ -30,21 +32,20 @@ func (c CmdElement) Help() string {
 }
 func (c CmdElement) Compliter() (cmpl []menu.Compliter) {
 	return c.menu.MakeCompliterFromString([]string{
-		"-new", "-add", "-list", "-print", "-select", "-" + cmdHelp,
+		"-new", "-add", "-list", "-path", "-print", "-select", "-" + cmdHelp,
 	})
 }
 func (c CmdElement) Exec(line string) (err error) {
 
 	// Define and parse flags and get arguments
-	var new, add, list, print, selct /* , save */ bool
+	var new, add, list, path, print, selct /* , save */ bool
 	flags := c.NewFlagSet(c.Name(), c.Usage(), c.Help())
 	flags.BoolVar(&new, "new", new, "create new tree element")
-	flags.BoolVar(&add, "add", add, "add new element to current trees element")
-	flags.BoolVar(&list, "list", print, "prints list of element in this tree")
+	flags.BoolVar(&add, "add", add, "add way to existing or new element from current trees element")
+	flags.BoolVar(&list, "list", list, "list all elements in this tree")
+	flags.BoolVar(&path, "path", path, "prints path from current element to selected in this tree")
 	flags.BoolVar(&print, "print", print, "prints the tree started from current element")
 	flags.BoolVar(&selct, "select", selct, "select element in current tree by name")
-	// flags.BoolVar(&save, "save", save, "save current tree")
-	// flags.BoolVar(&selct, "select", list, "select tree from list of trees by id")
 	err = flags.Parse(c.menu.SplitSpace(line))
 	if err != nil {
 		return
@@ -79,16 +80,54 @@ func (c CmdElement) Exec(line string) (err error) {
 			err = ErrWrongNumArguments
 			return
 		}
+
+		// Parse arguments
 		name := strings.Join(args, " ")
-		e := c.tree.New(TreeData(name))
-		c.element.Add(e)
+		opt := tree.WayOptions{Cost: 1.0}
+		if par := strings.Split(name, ","); len(par) > 1 {
+			name = strings.TrimSpace(par[0])
+			if s, err := strconv.ParseFloat(strings.TrimSpace(par[1]), 64); err == nil {
+				opt.Cost = s
+			}
+		}
+
+		// Get element by name and create new if not exists
+		e := c.element.Get(name)
+		if e == nil {
+			e = c.tree.New(TreeData(name))
+		}
+
+		// Add way to element
+		c.element.Add(e, opt)
 		fmt.Printf("element '%s' created and added to %s\n",
 			e.Value(), c.element.Value())
 
+	// Prints all tree elements: -list flag
+	case list:
+		fmt.Printf("elements in tree name: '%s', id: %s\n%s\n",
+			c.tree, c.tree.Id(), c.element.List().Sort())
+
 	// Prints the tree started from current element: -print flag
 	case print:
-		fmt.Printf("list elements in tree name: '%s', id: %s\n%s\n",
+		fmt.Printf("elements in tree name: '%s', id: %s\n%s\n",
 			c.tree, c.tree.Id(), c.element)
+
+	// Prints path from current element to selected in this tree: -path flag
+	case path:
+		if argc == 0 {
+			flags.Usage()
+			err = ErrWrongNumArguments
+			return
+		}
+		name := strings.Join(args, " ")
+		e := c.element.Get(name)
+		if e == nil {
+			err = ErrElementNotFound
+			return
+		}
+		p := c.element.PathTo(e).Sort()
+		fmt.Printf("paths to element in tree name: '%s', id: %s\n%s\n",
+			c.tree, c.tree.Id(), p)
 
 	// Select element in current tree by name: -selct flag
 	case selct:
@@ -106,11 +145,9 @@ func (c CmdElement) Exec(line string) (err error) {
 		c.element = e
 		fmt.Printf("element '%s' selected\n", e.Value())
 
-	// Wrong flag selected or flags is empty
+	// Print current tree element if flag omitted
 	default:
-		flags.Usage()
-		err = ErrNoFlags
-		return
+		fmt.Printf("current element: '%s'\n", c.element.Value())
 	}
 
 	return
