@@ -25,8 +25,7 @@ type Tree struct {
 	element  *tree.Element[TreeData] // Current element
 	menu     *menu.Menu              // Commands menu
 	commands []menu.Item             // Commands menu items
-	batch    *Batch
-	// alias    *Alias
+	batch    *menu.Batch             // Batch files menu object
 }
 
 // TreeData is tree elements data structure
@@ -65,9 +64,7 @@ func NewTreeCli(appShort string) (cli *Tree, err error) {
 		return
 	}
 	cli.menu.Add(cli.commands...)
-	cli.batch = &Batch{cli.menu}
-	// cli.alias = newAlias()
-	// cli.api = newAPI()
+	cli.batch = menu.NewBatch(cli.menu)
 
 	// Create default tree and add it to default tree
 	cli.tree = tree.New[TreeData]()

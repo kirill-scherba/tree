@@ -25,9 +25,8 @@ func main() {
 		fmt.Println("can't create Tree CLI interface, err:", err)
 	}
 
-	// TODO: Run batch files
-	cli.batch.run(defTreeBatchFile)
-	// cli.batch.run(connectBatchFile)
+	// Run batch files
+	cli.batch.Run(appShort, defaultTreeBatchFile)
 
 	// Run Teonet CLI commands menu
 	fmt.Print(

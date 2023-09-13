@@ -95,8 +95,5 @@ func (c CmdTree) Exec(line string) (err error) {
 		fmt.Printf("current tree name: '%s', id: %s\n", c.tree, c.tree.Id())
 	}
 
-	// Add alias
-	// c.alias.add(args[0], args[1])
-
 	return
 }

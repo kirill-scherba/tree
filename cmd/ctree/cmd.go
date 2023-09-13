@@ -10,17 +10,16 @@ import (
 	"errors"
 )
 
-// Command name
+// Commands name
 const (
-	// cmdConnectTo = "connectto"
-	// cmdSendTo    = "sendto"
-	// cmdAlias     = "alias"
-	// cmdStat      = "stat"
-	// cmdAPI       = "api"
-	cmdHelp = "help"
-
+	cmdHelp    = "help"
 	cmdTree    = "tree"
 	cmdElement = "element"
+)
+
+// Names of batch files
+const (
+	defaultTreeBatchFile = "def_tree.conf"
 )
 
 var (
@@ -36,12 +35,6 @@ type TreeCommand struct{ *Tree }
 // addCommands add commands
 func (cli *Tree) addCommands() {
 	cli.commands = append(cli.commands,
-		// cli.newCmdAlias(),
-		// cli.newCmdConnectTo(),
-		// cli.newCmdSendTo(),
-		// cli.newCmdStat(),
-		// cli.newCmdAPI(),
-
 		cli.newCmdTree(),
 		cli.newCmdElement(),
 	)

@@ -2,7 +2,10 @@ module github.com/kirill-scherba/tree/cmd/ctree
 
 go 1.21.0
 
-require github.com/teonet-go/teonet v0.6.3
+require (
+	github.com/kirill-scherba/tree v0.0.5
+	github.com/teonet-go/teonet v0.6.4
+)
 
 require (
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
