@@ -60,6 +60,8 @@ Print tree example:
 └── End point, cost: 5.00 (way not allowed) 🡡
 ```
 
+You can run this example in [The Go Playground](https://go.dev/play/p/oNlsTAdGWJP)
+
 You can find complete packets documentation at: <https://pkg.go.dev/github.com/kirill-scherba/tree>
 
 ## Licence
