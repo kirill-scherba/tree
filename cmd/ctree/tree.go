@@ -67,7 +67,7 @@ func NewTreeCli(appShort string) (cli *Tree, err error) {
 	cli.batch = menu.NewBatch(cli.menu)
 
 	// Create default tree and add it to default tree
-	cli.tree = tree.New[TreeData]()
+	cli.tree = tree.New[TreeData]("Default tree")
 	cli.treeList.add(cli.tree)
 
 	return
