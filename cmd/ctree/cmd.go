@@ -23,10 +23,11 @@ const (
 )
 
 var (
-	ErrWrongNumArguments = errors.New("wrong number of arguments")
-	ErrWrongIdArgument   = errors.New("wrong id in arguments")
-	ErrNoFlags           = errors.New("no flags, one of flag should be specified")
-	ErrElementNotFound   = errors.New("element not found")
+	ErrWrongNumArguments  = errors.New("wrong number of arguments")
+	ErrWrongIdArgument    = errors.New("wrong id in arguments")
+	ErrNoFlags            = errors.New("no flags, one of flag should be specified")
+	ErrElementNotFound    = errors.New("element not found")
+	ErrFunctionNotDefined = errors.New("function not defined")
 )
 
 // TreeCommand common Tree CLI command structure

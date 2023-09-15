@@ -52,6 +52,8 @@ func (c *CmdElement) Flags() (err error) {
 		"list":   {usage: "list all elements in this tree", f: c.list},
 		"path":   {usage: "prints path from current element to selected in this tree", f: c.path},
 		"ways":   {usage: "prints current element and his children ways", f: c.ways},
+		"remove": {usage: "remove current element", f: c.remove},
+		"del":    {usage: "delete way from current element to selected", f: c.del},
 		"print":  {usage: "prints the tree started from current element", f: c.print},
 		"select": {usage: "select element in current tree by name", f: c.selectFlag},
 	}
@@ -99,7 +101,11 @@ func (c *CmdElement) Exec(line string) (err error) {
 	// Find flag sets to true in flags map and execute its function
 	for _, d := range c.flagsM {
 		if d.flag {
-			err = d.f()
+			if d.f != nil {
+				err = d.f()
+			} else {
+				err = ErrFunctionNotDefined
+			}
 			return
 		}
 	}
@@ -191,6 +197,41 @@ func (c *CmdElement) ways() (err error) {
 				e.Value(), cost, child.WayAllowed(e))
 		}
 	}
+	return
+}
+
+// remove removes current element: -remove flag
+func (c *CmdElement) remove() (err error) {
+	var child *tree.Element[TreeData]
+	for child = range c.element.Ways() {
+		break
+	}
+	_, err = c.element.Remove()
+	if child != nil {
+		c.element = child
+	}
+	fmt.Printf("element '%s' removed\n", c.element.Value())
+	return
+}
+
+// del deletes way from current element to selected: -del flag
+func (c *CmdElement) del() (err error) {
+
+	if err = c.checkArgs(1); err != nil {
+		return
+	}
+
+	name := strings.Join(c.args, " ")
+	e := c.element.Get(name)
+	if e == nil {
+		err = ErrElementNotFound
+		return
+	}
+	_, err = c.element.Del(e)
+	if err != nil {
+		return
+	}
+	fmt.Printf("way to element '%s' deleted\n", name)
 	return
 }
 
