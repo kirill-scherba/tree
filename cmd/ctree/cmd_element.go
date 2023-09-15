@@ -155,6 +155,11 @@ func (c *CmdElement) add() (err error) {
 		if s, err := strconv.ParseFloat(strings.TrimSpace(par[1]), 64); err == nil {
 			opt.Cost = s
 		}
+		if len(par) > 2 {
+			if strings.TrimSpace(par[1]) == "true" {
+				opt.Oneway = true
+			}
+		}
 	}
 
 	// Get element by name and create new if not exists
@@ -186,16 +191,6 @@ func (c *CmdElement) ways() (err error) {
 		cost, _ := c.element.Cost(child)
 		fmt.Printf("  way to '%s' cost: %.2f, way allowed: %v\n",
 			child.Value(), cost, c.element.WayAllowed(child))
-	}
-
-	// Print child ways
-	for child := range c.element.Ways() {
-		fmt.Printf("\n%s ways:\n", child.Value())
-		for e := range child.Ways() {
-			cost, _ := child.Cost(e)
-			fmt.Printf("  way to '%s' cost: %.2f, way allowed: %v\n",
-				e.Value(), cost, child.WayAllowed(e))
-		}
 	}
 	return
 }
