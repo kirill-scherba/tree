@@ -12,6 +12,7 @@ import (
 
 	"github.com/kirill-scherba/tree"
 	"github.com/teonet-go/teonet/cmd/teonet/menu"
+	"golang.org/x/exp/slices"
 )
 
 // CmdTree command structure
@@ -31,16 +32,17 @@ func (c CmdTree) Help() string {
 }
 func (c CmdTree) Compliter() (cmpl []menu.Compliter) {
 	return c.menu.MakeCompliterFromString([]string{
-		"-list", "-save", "-new", "-select", "-" + cmdHelp,
+		"-list", "-save", "-load", "-new", "-select", "-" + cmdHelp,
 	})
 }
 func (c CmdTree) Exec(line string) (err error) {
 
 	// Define and parse flags and get arguments
-	var new, save, list, selct bool
+	var new, save, load, list, selct bool
 	flags := c.NewFlagSet(c.Name(), c.Usage(), c.Help())
 	flags.BoolVar(&new, "new", new, "create new tree")
 	flags.BoolVar(&save, "save", save, "save current tree")
+	flags.BoolVar(&load, "load", load, "load current tree")
 	flags.BoolVar(&list, "list", list, "print list of trees")
 	flags.BoolVar(&selct, "select", selct, "select tree from list of trees by id")
 	err = flags.Parse(c.menu.SplitSpace(line))
@@ -65,6 +67,7 @@ func (c CmdTree) Exec(line string) (err error) {
 		} else {
 			c.tree = tree.New[TreeData]()
 		}
+		c.element = c.tree.New(TreeData("My first node"))
 		c.treeList.add(c.tree)
 		fmt.Printf("new tree '%s' created, id: %s\n", c.tree, c.tree.Id())
 		return
@@ -88,7 +91,64 @@ func (c CmdTree) Exec(line string) (err error) {
 		}
 		c.tree = tree
 		fmt.Printf("tree '%s' selected, id: %s\n", c.tree, c.tree.Id())
+		c.batch.Run(appShort, c.tree.Name()+".conf")
 		return
+
+	// Save current tree: -save flag
+	case save:
+
+		// Get children func
+		var getChildren func(path *tree.List[TreeData], e *tree.Element[TreeData]) string
+		getChildren = func(path *tree.List[TreeData], e *tree.Element[TreeData]) (str string) {
+			var i int
+
+			type childChData struct {
+				path *tree.List[TreeData]
+				e    *tree.Element[TreeData]
+			}
+			childCh := make(chan childChData, len(e.Ways()))
+			for child := range e.Ways() {
+
+				if slices.Contains(*path, child) {
+					continue
+				}
+				*path = append(*path, child)
+
+				if i == 0 {
+					str += fmt.Sprintf("\nelement -select %s\n", e.Value())
+					i++
+				}
+
+				cost, _ := c.element.Cost(child)
+				oneway, _ := c.element.Oneway(child)
+				str += fmt.Sprintf("element -add %s, %f, %v\n", child.Value(), cost, oneway)
+
+				p := slices.Clone(*path)
+				childCh <- childChData{&p, child}
+			}
+			close(childCh)
+
+			for d := range childCh {
+				str += getChildren(d.path, d.e)
+			}
+
+			return str
+		}
+
+		// Create string with tree commands
+		str := fmt.Sprintf("element -new %s\n", c.element.Value())
+		// var path = tree.List[TreeData]{c.element}
+		str += getChildren(&tree.List[TreeData]{c.element}, c.element)
+		str += fmt.Sprintf("\nelement -select %s\n", c.element.Value())
+		fmt.Print(str)
+
+		// Save tree commands to batch file
+		batch := strings.Split(str, "\n")
+		c.batch.Save(appShort, c.tree.Name()+".conf", "", batch)
+
+	// Load current tree: -load flag
+	case load:
+		c.batch.Run(appShort, c.tree.Name()+".conf")
 
 	// Print current tre name and id
 	default:

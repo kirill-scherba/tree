@@ -153,6 +153,13 @@ func (e *Element[T]) Cost(c *Element[T]) (cost float64, ok bool) {
 	return e.cost(c)
 }
 
+// Oneway returns elements oneway flag
+func (e *Element[T]) Oneway(c *Element[T]) (oneway bool, ok bool) {
+	e.RLock()
+	defer e.RUnlock()
+	return e.oneway(c)
+}
+
 // WayAllowed return true if the path from e to c element is available
 func (e *Element[T]) WayAllowed(c *Element[T]) bool {
 	e.RLock()
@@ -236,6 +243,15 @@ func (e *Element[T]) cost(c *Element[T]) (cost float64, ok bool) {
 	opt, ok := e.ways[c]
 	if ok {
 		cost = opt.Cost
+	}
+	return
+}
+
+// oneway returns elements oneway flag (Unsafe)
+func (e *Element[T]) oneway(c *Element[T]) (oneway bool, ok bool) {
+	opt, ok := e.ways[c]
+	if ok {
+		oneway = opt.Oneway
 	}
 	return
 }
