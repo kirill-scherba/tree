@@ -53,7 +53,7 @@ func (c *CmdElement) Flags() (err error) {
 		"path":   {usage: "prints path from current element to selected in this tree", f: c.path},
 		"ways":   {usage: "prints current element and his children ways", f: c.ways},
 		"remove": {usage: "remove current element", f: c.remove},
-		"del":    {usage: "delete way from current element to selected", f: c.del},
+		"del":    {usage: "delete way from current element to selected elements splitted by comma", f: c.del},
 		"print":  {usage: "prints the tree started from current element", f: c.print},
 		"select": {usage: "select element in current tree by name", f: c.selectFlag},
 	}
@@ -222,17 +222,24 @@ func (c *CmdElement) del() (err error) {
 	}
 
 	name := strings.Join(c.args, " ")
-	e := c.element.Get(name)
-	if e == nil {
-		err = ErrElementNotFound
-		return
+	names := strings.Split(name, ",")
+	for i := range names {
+		name = strings.TrimSpace(names[i])
+		e := c.element.Get(name)
+		if e == nil {
+			err = ErrElementNotFound
+			fmt.Printf("error: '%s' %s\n", name, ErrElementNotFound)
+			continue
+		}
+		_, err = c.element.Del(e)
+		if err != nil {
+			fmt.Printf("error: '%s' %s\n", name, ErrElementNotFound)
+			continue
+		}
+		fmt.Printf("way to element '%s' deleted\n", name)
 	}
-	_, err = c.element.Del(e)
-	if err != nil {
-		return
-	}
-	fmt.Printf("way to element '%s' deleted\n", name)
-	return
+
+	return nil
 }
 
 // print prints the tree started from current element: -print flag

@@ -16,6 +16,7 @@ import (
 var (
 	ErrChildAlreadyAdded  = errors.New("child already added")
 	ErrParentAlreadyAdded = errors.New("parent already added")
+	ErrChildNotFound      = errors.New("child not found")
 )
 
 // Tree is the tree methods receiver

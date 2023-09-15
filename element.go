@@ -85,6 +85,10 @@ func (e *Element[T]) Del(c *Element[T]) (*Element[T], error) {
 	defer e.Unlock()
 	defer c.Unlock()
 
+	if _, ok := e.ways[c]; !ok {
+		return nil, ErrChildNotFound
+	}
+
 	delete(e.ways, c)
 	delete(c.ways, e)
 	return e, nil
