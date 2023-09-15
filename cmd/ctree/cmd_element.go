@@ -9,6 +9,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -20,26 +21,21 @@ import (
 type CmdElement struct {
 	TreeCommand
 	flagsSet *flag.FlagSet
-	flags    struct {
-		new, add, list, path, print, selct bool
-	}
-	// flagsM flagsMap
-	args []string
-	argc int
+	flagsM   flagsMap
+	args     []string
+	argc     int
 }
-
-// type flagsMap = map[string]flagsMapData
-// type flagsMapData struct {
-// 	flag bool
-// 	f    func() error
-// }
+type flagsMap = map[string]*flagsMapData
+type flagsMapData struct {
+	flag  bool
+	usage string
+	f     func() error
+}
 
 // Create CmdElement command
 func (cli *Tree) newCmdElement() menu.Item {
 	item := &CmdElement{TreeCommand: TreeCommand{cli}}
-	// item.flagsM = flagsMap {
-	// 	"new": {},
-	// }
+	item.Flags()
 	return item
 }
 func (c CmdElement) Name() string  { return cmdElement }
@@ -49,15 +45,23 @@ func (c CmdElement) Help() string {
 		"any operation with current tree elements depending of flag " +
 		"(print current tree element if flag omitted)"
 }
+func (c *CmdElement) Flags() (err error) {
+	c.flagsM = flagsMap{
+		"new":    {usage: "create new tree element", f: c.new},
+		"add":    {usage: "add way to existing or new element from current trees element", f: c.add},
+		"list":   {usage: "list all elements in this tree", f: c.list},
+		"path":   {usage: "prints path from current element to selected in this tree", f: c.path},
+		"ways":   {usage: "prints current element and his children ways", f: c.ways},
+		"print":  {usage: "prints the tree started from current element", f: c.print},
+		"select": {usage: "select element in current tree by name", f: c.selectFlag},
+	}
+	return
+}
 func (c *CmdElement) Parse(line string) (err error) {
 	c.flagsSet = c.NewFlagSet(c.Name(), c.Usage(), c.Help())
-	c.flagsSet.BoolVar(&c.flags.new, "new", false, "create new tree element")
-	c.flagsSet.BoolVar(&c.flags.add, "add", false, "add way to existing or new element from current trees element")
-	c.flagsSet.BoolVar(&c.flags.list, "list", false, "list all elements in this tree")
-	c.flagsSet.BoolVar(&c.flags.path, "path", false, "prints path from current element to selected in this tree")
-	c.flagsSet.BoolVar(&c.flags.print, "print", false, "prints the tree started from current element")
-	c.flagsSet.BoolVar(&c.flags.selct, "select", false, "select element in current tree by name")
-
+	for f, d := range c.flagsM {
+		c.flagsSet.BoolVar(&d.flag, f, false, d.usage)
+	}
 	err = c.flagsSet.Parse(c.menu.SplitSpace(line))
 	if err != nil {
 		return
@@ -68,48 +72,38 @@ func (c *CmdElement) Parse(line string) (err error) {
 	return
 }
 func (c CmdElement) Compliter() (cmpl []menu.Compliter) {
-	return c.menu.MakeCompliterFromString([]string{
-		"-new", "-add", "-list", "-path", "-print", "-select", "-" + cmdHelp,
+	var str []string
+	for flag := range c.flagsM {
+		str = append(str, "-"+flag)
+	}
+	sort.Slice(str, func(i, j int) bool {
+		if str[i] < str[j] {
+			return true
+		}
+		return false
 	})
+	str = append(str, "-"+cmdHelp)
+	return c.menu.MakeCompliterFromString(str)
 }
-func (c CmdElement) Exec(line string) (err error) {
+func (c *CmdElement) Exec(line string) (err error) {
 
+	// Parse arguments and flags
 	c.Parse(line)
 
-	switch {
-
 	// Print help
-	case c.argc > 0 && c.args[0] == cmdHelp:
+	if c.argc > 0 && c.args[0] == cmdHelp {
 		c.flagsSet.Usage()
-
-	// Create new tree element: -new flag
-	case c.flags.new:
-		err = c.new()
-
-	// Adds new element to current trees element: -add flag
-	case c.flags.add:
-		err = c.add()
-
-	// Prints all tree elements: -list flag
-	case c.flags.list:
-		err = c.list()
-
-	// Prints the tree started from current element: -print flag
-	case c.flags.print:
-		err = c.print()
-
-	// Prints path from current element to selected in this tree: -path flag
-	case c.flags.path:
-		err = c.path()
-
-	// Select element in current tree by name: -selct flag
-	case c.flags.selct:
-		err = c.selct()
-
-	// Print current tree element if flag omitted
-	default:
-		fmt.Printf("current element: '%s'\n", c.element.Value())
+		return
 	}
+
+	// Find flag sets to true in flags map and execute its function
+	for _, d := range c.flagsM {
+		if d.flag {
+			err = d.f()
+			return
+		}
+	}
+	fmt.Printf("current element: '%s'\n", c.element.Value())
 
 	return
 }
@@ -126,7 +120,7 @@ func (c CmdElement) checkArgs(n int) (err error) {
 }
 
 // new creates new tree element: -new flag
-func (c CmdElement) new() (err error) {
+func (c *CmdElement) new() (err error) {
 
 	if err = c.checkArgs(1); err != nil {
 		return
@@ -141,7 +135,7 @@ func (c CmdElement) new() (err error) {
 }
 
 // add adds new element to current trees element: -add flag
-func (c CmdElement) add() (err error) {
+func (c *CmdElement) add() (err error) {
 
 	if err = c.checkArgs(1); err != nil {
 		return
@@ -172,27 +166,48 @@ func (c CmdElement) add() (err error) {
 }
 
 // list prints all tree elements: -list flag
-func (c CmdElement) list() (err error) {
+func (c *CmdElement) list() (err error) {
 	fmt.Printf("elements in tree name: '%s', id: %s\n%s\n",
 		c.tree, c.tree.Id(), c.element.List().Sort())
 	return
 }
 
+// ways prints current element and his children ways: -ways flag
+func (c *CmdElement) ways() (err error) {
+	// Print parents ways
+	fmt.Printf("%s ways:\n", c.element.Value())
+	for child := range c.element.Ways() {
+		cost, _ := c.element.Cost(child)
+		fmt.Printf("  way to '%s' cost: %.2f, way allowed: %v\n",
+			child.Value(), cost, c.element.WayAllowed(child))
+	}
+
+	// Print child ways
+	for child := range c.element.Ways() {
+		fmt.Printf("\n%s ways:\n", child.Value())
+		for e := range child.Ways() {
+			cost, _ := child.Cost(e)
+			fmt.Printf("  way to '%s' cost: %.2f, way allowed: %v\n",
+				e.Value(), cost, child.WayAllowed(e))
+		}
+	}
+	return
+}
+
 // print prints the tree started from current element: -print flag
-func (c CmdElement) print() (err error) {
+func (c *CmdElement) print() (err error) {
 	fmt.Printf("elements in tree name: '%s', id: %s\n%s\n",
 		c.tree, c.tree.Id(), c.element)
 	return
 }
 
 // path prints path from current element to selected in this tree: -path flag
-func (c CmdElement) path() (err error) {
+func (c *CmdElement) path() (err error) {
 
-	if c.argc == 0 {
-		c.flagsSet.Usage()
-		err = ErrWrongNumArguments
+	if err = c.checkArgs(1); err != nil {
 		return
 	}
+
 	name := strings.Join(c.args, " ")
 	e := c.element.Get(name)
 	if e == nil {
@@ -206,14 +221,13 @@ func (c CmdElement) path() (err error) {
 	return
 }
 
-// selct selects element in current tree by name: -selct flag
-func (c CmdElement) selct() (err error) {
+// selct selects element in current tree by name: -select flag
+func (c *CmdElement) selectFlag() (err error) {
 
-	if c.argc == 0 {
-		c.flagsSet.Usage()
-		err = ErrWrongNumArguments
+	if err = c.checkArgs(1); err != nil {
 		return
 	}
+
 	name := strings.Join(c.args, " ")
 	e := c.element.Get(name)
 	if e == nil {
