@@ -99,7 +99,11 @@ func (c CmdTree) Exec(line string) (err error) {
 
 	// Load current tree: -load flag
 	case load:
-		c.batch.Run(appShort, c.tree.Name()+".conf")
+		name := c.tree.Name()
+		if argc > 0 {
+			name = strings.Join(args, " ")
+		}
+		c.batch.Run(appShort, name+".conf")
 
 	// Print current tre name and id
 	default:
