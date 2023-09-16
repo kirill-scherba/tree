@@ -114,87 +114,77 @@ func (c CmdTree) Exec(line string) (err error) {
 }
 
 // save saves tree elements to the batch file: -save flag
-func (c CmdTree) save() (err error) {
-
-	// Get children func
-	var getChildren func(path *ListPairs, e *tree.Element[TreeData]) string
-	getChildren = func(path *ListPairs, e *tree.Element[TreeData]) (str string) {
-		var i int
-
-		type childChData struct {
-			path *ListPairs
-			e    *tree.Element[TreeData]
-		}
-		childCh := make(chan childChData, len(e.Ways()))
-		for child := range e.Ways() {
-			// Skip if way not allowed or already exists in path
-			if !e.WayAllowed(child) || path.Contains(e, child) {
-				continue
-			}
-			path.Add(e, child)
-
-			// Print Element Select
-			if i == 0 {
-				str += fmt.Sprintf("\nelement -select %s\n", e.Value())
-				i++
-			}
-
-			// Check cost and oneway and pront Element Add
-			cost, _ := e.Cost(child)
-			oneway, _ := e.Oneway(child)
-			costStr := func() (costStr string) {
-				if !(cost == 1.0 && !oneway) {
-					costStr = fmt.Sprintf(", %f", cost)
-				}
-				return
-			}
-			onewayStr := func() (onewayStr string) {
-				if oneway {
-					onewayStr = fmt.Sprintf(", oneway")
-				}
-				return
-			}
-			str += fmt.Sprintf("element -add %s%s%s\n", child.Value(), costStr(), onewayStr())
-
-			// Send path and child to channel to process it after all
-			// children have been processed
-			childCh <- childChData{path, child}
-		}
-		close(childCh)
-
-		for d := range childCh {
-			str += getChildren(d.path, d.e)
-		}
-
-		return str
-	}
-
+func (c CmdTree) save() error {
 	// Create string with tree commands
 	str := fmt.Sprintf("element -new %s\n", c.element.Value())
-	str += getChildren(&ListPairs{}, c.element)
+	str += c.getChildren(&Pairs{}, c.element)
 	str += fmt.Sprintf("\nelement -select %s\n", c.element.Value())
 	fmt.Print(str)
 
 	// Save tree commands to batch file
 	batch := strings.Split(str, "\n")
-	c.batch.Save(appShort, c.tree.Name()+".conf", "", batch)
-
-	return
+	return c.batch.Save(appShort, c.tree.Name()+".conf", "", batch)
 }
 
-// ListPairs is array of pair of elements
-type ListPairs []Pair
+// getChildren get children of input element e depend of path
+func (c CmdTree) getChildren(path *Pairs, e *tree.Element[TreeData]) (str string) {
+	pSelect, childCh := true, make(chan *tree.Element[TreeData], len(e.Ways()))
+	for child := range e.Ways() {
+		// Skip if way not allowed or already exists in path
+		if !e.WayAllowed(child) || path.Contains(e, child) {
+			continue
+		}
+		path.Add(e, child)
+
+		// Print Element Select
+		if pSelect {
+			str += fmt.Sprintf("\nelement -select %s\n", e.Value())
+			pSelect = false
+		}
+
+		// Check cost and oneway and pront Element Add
+		cost, _ := e.Cost(child)
+		oneway, _ := e.Oneway(child)
+		costStr := func() (costStr string) {
+			if !(cost == 1.0 && !oneway) {
+				costStr = fmt.Sprintf(", %f", cost)
+			}
+			return
+		}
+		onewayStr := func() (onewayStr string) {
+			if oneway {
+				onewayStr = fmt.Sprintf(", oneway")
+			}
+			return
+		}
+		str += fmt.Sprintf("element -add %s%s%s\n", child.Value(), costStr(), onewayStr())
+
+		// Send path and child to channel to process it after all
+		// children have been processed
+		childCh <- child
+	}
+	close(childCh)
+
+	for e := range childCh {
+		str += c.getChildren(path, e)
+	}
+
+	return str
+}
+
+// Pairs is array of elements pairs
+type Pairs []Pair
 
 // Pair is array of pair of elements
 type Pair [2]*tree.Element[TreeData]
 
 // Add adds input pair of elements to the ListPairs slice
-func (l *ListPairs) Add(e, c *tree.Element[TreeData]) {
+func (l *Pairs) Add(e, c *tree.Element[TreeData]) {
 	*l = append(*l, Pair{e, c})
 }
 
 // Contains returns true if input pair of elements exists in the ListPairs slice
-func (l *ListPairs) Contains(e, c *tree.Element[TreeData]) bool {
+func (l *Pairs) Contains(e, c *tree.Element[TreeData]) bool {
 	return slices.ContainsFunc(*l, func(p Pair) bool {
 		if p[0] == e && p[1] == c || p[0] == c && p[1] == e {
 			return true
