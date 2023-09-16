@@ -102,13 +102,13 @@ func (c *CmdElement) Exec(line string) (err error) {
 	for _, d := range c.flagsM {
 		if d.flag {
 			if d.f != nil {
-				err = d.f()
-			} else {
-				err = ErrFunctionNotDefined
+				return d.f()
 			}
-			return
+			return ErrFunctionNotDefined
 		}
 	}
+
+	// Default action when flag no sets
 	fmt.Printf("current element: '%s'\n", c.element.Value())
 
 	return
@@ -156,7 +156,8 @@ func (c *CmdElement) add() (err error) {
 			opt.Cost = s
 		}
 		if len(par) > 2 {
-			if strings.TrimSpace(par[1]) == "true" {
+			parOneway := strings.TrimSpace(par[2])
+			if parOneway == "true" || parOneway == "oneway" {
 				opt.Oneway = true
 			}
 		}

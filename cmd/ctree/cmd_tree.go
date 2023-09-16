@@ -36,7 +36,6 @@ func (c CmdTree) Compliter() (cmpl []menu.Compliter) {
 	})
 }
 func (c CmdTree) Exec(line string) (err error) {
-
 	// Define and parse flags and get arguments
 	var new, save, load, list, selct bool
 	flags := c.NewFlagSet(c.Name(), c.Usage(), c.Help())
@@ -96,55 +95,7 @@ func (c CmdTree) Exec(line string) (err error) {
 
 	// Save current tree: -save flag
 	case save:
-
-		// Get children func
-		var getChildren func(path *tree.List[TreeData], e *tree.Element[TreeData]) string
-		getChildren = func(path *tree.List[TreeData], e *tree.Element[TreeData]) (str string) {
-			var i int
-
-			type childChData struct {
-				path *tree.List[TreeData]
-				e    *tree.Element[TreeData]
-			}
-			childCh := make(chan childChData, len(e.Ways()))
-			for child := range e.Ways() {
-
-				if slices.Contains(*path, child) {
-					continue
-				}
-				*path = append(*path, child)
-
-				if i == 0 {
-					str += fmt.Sprintf("\nelement -select %s\n", e.Value())
-					i++
-				}
-
-				cost, _ := c.element.Cost(child)
-				oneway, _ := c.element.Oneway(child)
-				str += fmt.Sprintf("element -add %s, %f, %v\n", child.Value(), cost, oneway)
-
-				p := slices.Clone(*path)
-				childCh <- childChData{&p, child}
-			}
-			close(childCh)
-
-			for d := range childCh {
-				str += getChildren(d.path, d.e)
-			}
-
-			return str
-		}
-
-		// Create string with tree commands
-		str := fmt.Sprintf("element -new %s\n", c.element.Value())
-		// var path = tree.List[TreeData]{c.element}
-		str += getChildren(&tree.List[TreeData]{c.element}, c.element)
-		str += fmt.Sprintf("\nelement -select %s\n", c.element.Value())
-		fmt.Print(str)
-
-		// Save tree commands to batch file
-		batch := strings.Split(str, "\n")
-		c.batch.Save(appShort, c.tree.Name()+".conf", "", batch)
+		err = c.save()
 
 	// Load current tree: -load flag
 	case load:
@@ -156,4 +107,94 @@ func (c CmdTree) Exec(line string) (err error) {
 	}
 
 	return
+}
+
+// save saves tree elements to the batch file: -save flag
+func (c CmdTree) save() (err error) {
+
+	// Get children func
+	var getChildren func(path *ListPairs, e *tree.Element[TreeData]) string
+	getChildren = func(path *ListPairs, e *tree.Element[TreeData]) (str string) {
+		var i int
+
+		type childChData struct {
+			path *ListPairs
+			e    *tree.Element[TreeData]
+		}
+		childCh := make(chan childChData, len(e.Ways()))
+		for child := range e.Ways() {
+			// Skip if way not allowed or already exists in path
+			if !e.WayAllowed(child) || path.Contains(e, child) {
+				continue
+			}
+			path.Add(e, child)
+
+			// Print Element Select
+			if i == 0 {
+				str += fmt.Sprintf("\nelement -select %s\n", e.Value())
+				i++
+			}
+
+			// Check cost and oneway and pront Element Add
+			cost, _ := e.Cost(child)
+			oneway, _ := e.Oneway(child)
+			costStr := func() (costStr string) {
+				if !(cost == 1.0 && !oneway) {
+					costStr = fmt.Sprintf(", %f", cost)
+				}
+				return
+			}
+			onewayStr := func() (onewayStr string) {
+				if oneway {
+					onewayStr = fmt.Sprintf(", oneway")
+				}
+				return
+			}
+			str += fmt.Sprintf("element -add %s%s%s\n", child.Value(), costStr(), onewayStr())
+
+			// Send path and child to channel to process it after all
+			// children have been processed
+			childCh <- childChData{path, child}
+		}
+		close(childCh)
+
+		for d := range childCh {
+			str += getChildren(d.path, d.e)
+		}
+
+		return str
+	}
+
+	// Create string with tree commands
+	str := fmt.Sprintf("element -new %s\n", c.element.Value())
+	str += getChildren(&ListPairs{}, c.element)
+	str += fmt.Sprintf("\nelement -select %s\n", c.element.Value())
+	fmt.Print(str)
+
+	// Save tree commands to batch file
+	batch := strings.Split(str, "\n")
+	c.batch.Save(appShort, c.tree.Name()+".conf", "", batch)
+
+	return
+}
+
+// ListPairs is array of pair of elements
+type ListPairs []Pair
+
+// Pair is array of pair of elements
+type Pair [2]*tree.Element[TreeData]
+
+// Add adds input pair of elements to the ListPairs slice
+func (l *ListPairs) Add(e, c *tree.Element[TreeData]) {
+	*l = append(*l, Pair{e, c})
+}
+
+// Contains returns true if input pair of elements exists in the ListPairs slice
+func (l *ListPairs) Contains(e, c *tree.Element[TreeData]) bool {
+	return slices.ContainsFunc(*l, func(p Pair) bool {
+		if p[0] == e && p[1] == c || p[0] == c && p[1] == e {
+			return true
+		}
+		return false
+	})
 }
