@@ -25,8 +25,19 @@ func main() {
 		fmt.Println("can't create Tree CLI interface, err:", err)
 	}
 
+	// Load trees from config folder
+	cli.treeList.load(appShort)
+
+	// Get saved selected tree
+	treeName, err := cli. loadSelectedTree(appShort)
+	if err != nil {
+		treeName = defaultTreeBatchFile
+	} else {
+		treeName += confExt
+	}
+
 	// Run batch files
-	cli.batch.Run(appShort, defaultTreeBatchFile)
+	cli.BatchRun(appShort, treeName)
 
 	// Run Teonet CLI commands menu
 	fmt.Print(

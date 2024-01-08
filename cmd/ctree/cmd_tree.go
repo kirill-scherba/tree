@@ -32,7 +32,7 @@ func (c CmdTree) Help() string {
 }
 func (c CmdTree) Compliter() (cmpl []menu.Compliter) {
 	return c.menu.MakeCompliterFromString([]string{
-		"-list", "-save", "-load", "-new", "-select", "-" + cmdHelp,
+		"-list", "-save", "-load", "-new", "-select", cmdHelp,
 	})
 }
 func (c CmdTree) Exec(line string) (err error) {
@@ -68,7 +68,7 @@ func (c CmdTree) Exec(line string) (err error) {
 		}
 		c.element = c.tree.New(TreeData("My first node"))
 		c.treeList.add(c.tree)
-		fmt.Printf("new tree '%s' created, id: %s\n", c.tree, c.tree.Id())
+		fmt.Printf("> new tree '%s' created\n", c.tree)
 		return
 
 	// Print list of trees: -list flag
@@ -83,14 +83,16 @@ func (c CmdTree) Exec(line string) (err error) {
 			err = ErrWrongNumArguments
 			return
 		}
-		tree := c.treeList.get(args[0])
+		name := strings.Join(args, " ")
+		tree := c.treeList.get(name)
 		if tree == nil {
-			err = ErrWrongIdArgument
+			err = ErrWrongNameArgument
 			return
 		}
 		c.tree = tree
-		fmt.Printf("tree '%s' selected, id: %s\n", c.tree, c.tree.Id())
-		c.batch.Run(appShort, c.tree.Name()+".conf")
+		fmt.Printf("> tree '%s' selected\n", c.tree)
+		c.BatchRun(appShort, c.tree.Name()+confExt)
+		c.saveSelectedTree(appShort)
 		return
 
 	// Save current tree: -save flag
@@ -103,11 +105,11 @@ func (c CmdTree) Exec(line string) (err error) {
 		if argc > 0 {
 			name = strings.Join(args, " ")
 		}
-		c.batch.Run(appShort, name+".conf")
+		c.BatchRun(appShort, name+confExt)
 
 	// Print current tre name and id
 	default:
-		fmt.Printf("current tree name: '%s', id: %s\n", c.tree, c.tree.Id())
+		fmt.Printf("current tree name: '%s'\n", c.tree)
 	}
 
 	return
@@ -123,7 +125,7 @@ func (c CmdTree) save() error {
 
 	// Save tree commands to batch file
 	batch := strings.Split(str, "\n")
-	return c.batch.Save(appShort, c.tree.Name()+".conf", "", batch)
+	return c.batch.Save(appShort, c.tree.Name()+confExt, "", batch)
 }
 
 // getChildren get children of input element e depend of path

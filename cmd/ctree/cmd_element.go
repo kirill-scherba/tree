@@ -84,7 +84,7 @@ func (c CmdElement) Compliter() (cmpl []menu.Compliter) {
 		}
 		return false
 	})
-	str = append(str, "-"+cmdHelp)
+	str = append(str, cmdHelp)
 	return c.menu.MakeCompliterFromString(str)
 }
 func (c *CmdElement) Exec(line string) (err error) {
@@ -102,6 +102,7 @@ func (c *CmdElement) Exec(line string) (err error) {
 	for _, d := range c.flagsM {
 		if d.flag {
 			if d.f != nil {
+				fmt.Println(">", d.usage)
 				return d.f()
 			}
 			return ErrFunctionNotDefined
@@ -135,7 +136,7 @@ func (c *CmdElement) new() (err error) {
 	name := strings.Join(c.args, " ")
 	e := c.tree.New(TreeData(name))
 	c.element = e
-	fmt.Printf("element '%s' created\n", e.Value())
+	fmt.Printf("> the '%s' element created\n", e.Value())
 
 	return
 }
@@ -171,7 +172,7 @@ func (c *CmdElement) add() (err error) {
 
 	// Add way to element
 	c.element.Add(e, opt)
-	fmt.Printf("element '%s' created and added to %s\n",
+	fmt.Printf("> the '%s' element created and added to %s\n",
 		e.Value(), c.element.Value())
 
 	return
@@ -179,8 +180,8 @@ func (c *CmdElement) add() (err error) {
 
 // list prints all tree elements: -list flag
 func (c *CmdElement) list() (err error) {
-	fmt.Printf("elements in tree name: '%s', id: %s\n%s\n",
-		c.tree, c.tree.Id(), c.element.List().Sort())
+	fmt.Printf("elements in tree: '%s'\n%s\n",
+		c.tree, c.element.List().Sort())
 	return
 }
 
@@ -206,7 +207,7 @@ func (c *CmdElement) remove() (err error) {
 	if child != nil {
 		c.element = child
 	}
-	fmt.Printf("element '%s' removed\n", c.element.Value())
+	fmt.Printf("> the '%s' element removed\n", c.element.Value())
 	return
 }
 
@@ -240,8 +241,7 @@ func (c *CmdElement) del() (err error) {
 
 // print prints the tree started from current element: -print flag
 func (c *CmdElement) print() (err error) {
-	fmt.Printf("elements in tree name: '%s', id: %s\n%s\n",
-		c.tree, c.tree.Id(), c.element)
+	fmt.Printf("elements in tree: '%s'\n%s\n", c.tree, c.element)
 	return
 }
 
@@ -259,8 +259,7 @@ func (c *CmdElement) path() (err error) {
 		return
 	}
 	p := c.element.PathTo(e).Sort()
-	fmt.Printf("paths to element in tree name: '%s', id: %s\n%s\n",
-		c.tree, c.tree.Id(), p)
+	fmt.Printf("paths to element in tree: '%s'\n%s\n", c.tree, p)
 
 	return
 }
@@ -279,7 +278,7 @@ func (c *CmdElement) selectFlag() (err error) {
 		return
 	}
 	c.element = e
-	fmt.Printf("element '%s' selected\n", e.Value())
+	fmt.Printf("> the '%s' element selected\n", e.Value())
 
 	return
 }

@@ -22,7 +22,6 @@ var (
 // Tree is the tree methods receiver
 type Tree[T TreeData] struct {
 	name string
-	id   string
 }
 
 // TreeData interface represents TreeData required methods
@@ -38,7 +37,7 @@ func New[T TreeData](opts ...string) *Tree[T] {
 	} else {
 		name = id
 	}
-	return &Tree[T]{name: name, id: id}
+	return &Tree[T]{name: name}
 }
 
 // New creates newtree element
@@ -56,6 +55,3 @@ func (t *Tree[T]) Name() string { return t.name }
 // String returns name of string (if name was ommited when tree was created
 // then name equal id)
 func (t *Tree[T]) String() string { return t.Name() }
-
-// Id return trees id
-func (t *Tree[T]) Id() string { return t.id }

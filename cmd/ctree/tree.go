@@ -37,8 +37,8 @@ func (t TreeData) String() string {
 }
 
 // NewTreeCli create new Tree CLI client
-func NewTreeCli(appShort string) (cli *Tree, err error) {
-	cli = &Tree{}
+func NewTreeCli(appShort string) (t *Tree, err error) {
+	t = &Tree{}
 
 	// Create config directory if does not exists
 	dir, err := os.UserConfigDir()
@@ -55,41 +55,101 @@ func NewTreeCli(appShort string) (cli *Tree, err error) {
 	}
 
 	// Add commands
-	cli.addCommands()
+	t.addCommands()
 
 	// Create readline based cli menu and add menu items (commands)
-	cli.menu, err = menu.New(appShort)
+	t.menu, err = menu.New(appShort)
 	if err != nil {
 		err = fmt.Errorf("can't create menu, %s", err)
 		return
 	}
-	cli.menu.Add(cli.commands...)
-	cli.batch = menu.NewBatch(cli.menu)
+	t.menu.Add(t.commands...)
+	t.batch = menu.NewBatch(t.menu)
 
 	// Create default tree and add it to default tree
-	cli.tree = tree.New[TreeData]("Default tree")
-	cli.treeList.add(cli.tree)
+	t.tree = tree.New[TreeData]("Default tree")
+	t.treeList.add(t.tree)
 
 	return
 }
 
 // Command get command by name or nil if not found
-func (cli Tree) Command(name string) interface{} {
-	for i := range cli.commands {
-		if cli.commands[i].Name() == name {
-			return cli.commands[i]
+func (t Tree) Command(name string) interface{} {
+	for i := range t.commands {
+		if t.commands[i].Name() == name {
+			return t.commands[i]
 		}
 	}
 	return nil
 }
 
 // Run command line interface menu
-func (cli Tree) Run() {
-	cli.menu.Run()
+func (t Tree) Run() {
+	t.menu.Run()
+}
+
+// BatchRun run batch file
+func (t Tree) BatchRun(appShort, name string) error {
+	return t.batch.Run(appShort, name)
+}
+
+const selectedName = "selected.tmp"
+
+// saveSelectedTree saves the selected tree to the config.
+//
+// Parameters:
+// - appShort: The short name of the application.
+//
+// Returns:
+// - err: The error, if any.
+func (t *Tree) saveSelectedTree(appShort string) (err error) {
+	// Get config folder
+	f, err := t.getSelectedConfig(appShort)
+	if err != nil {
+		return
+	}
+
+	// Write selected tree name to the file
+	err = os.WriteFile(f, []byte(t.tree.Name()), 0644)
+
+	return
+}
+
+// loadSelectedTree loads the selected tree from the config folder.
+//
+// Parameters:
+// - appShort: The short name of the application.
+//
+// It returns the name of the selected tree and any error encountered.
+func (t *Tree) loadSelectedTree(appShort string) (name string, err error) {
+	// Get config folder
+	f, err := t.getSelectedConfig(appShort)
+	if err != nil {
+		return
+	}
+
+	// Read selected tree name from the file
+	data, err := os.ReadFile(f)
+	if err != nil {
+		return
+	}
+	name = string(data)
+
+	return
+}
+
+// getSelectedConfig returns the path to the selected tree config file.
+func (t *Tree) getSelectedConfig(appShort string) (f string, err error) {
+	f, err = os.UserConfigDir()
+	if err != nil {
+		return
+	}
+	f += "/" + teonet.ConfigDir + "/" + appShort + "/" + selectedName
+	return
 }
 
 // setUsage set flags usage helper function
-func (cli Tree) setUsage(usage string, flags *flag.FlagSet, help ...string) {
+func (t Tree) setUsage(usage string, flags *flag.FlagSet, help ...string) {
 	savUsage := flags.Usage
 	flags.Usage = func() {
 		fmt.Print("usage: " + usage + "\n\n")
@@ -102,8 +162,8 @@ func (cli Tree) setUsage(usage string, flags *flag.FlagSet, help ...string) {
 }
 
 // NewFlagSet
-func (cli Tree) NewFlagSet(name, usage string, help ...string) (flags *flag.FlagSet) {
+func (t Tree) NewFlagSet(name, usage string, help ...string) (flags *flag.FlagSet) {
 	flags = flag.NewFlagSet(name, flag.ContinueOnError)
-	cli.setUsage(name+" "+usage, flags, help...)
+	t.setUsage(name+" "+usage, flags, help...)
 	return
 }
